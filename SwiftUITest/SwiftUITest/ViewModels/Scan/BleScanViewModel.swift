@@ -94,7 +94,7 @@ final class BleScanViewModel: ObservableObject {
         nextOrder = 0
     }
 
-    // ★追加：セルタップ時に呼ぶ
+    // BLEデバイスを選択（セルタップ時に呼ぶ）
     func select(_ device: BleDevice) {
         // 遷移時にスキャン停止
         stopScan()
@@ -161,7 +161,7 @@ final class BleScanViewModel: ObservableObject {
             try? await Task.sleep(for: .seconds(scanDurationSeconds))
 
             await MainActor.run {
-                // 10秒経ってもまだスキャン中なら停止
+                // スキャン自動停止の時間が経っても、まだスキャン中なら停止
                 if self.isScanning {
                     self.stopScan()
                 }

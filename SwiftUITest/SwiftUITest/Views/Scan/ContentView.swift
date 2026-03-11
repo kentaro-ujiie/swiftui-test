@@ -10,11 +10,6 @@ import CoreBluetooth
 
 struct ContentView: View {
     
-    // sheetを使った画面遷移の状態
-//    @State private var ShowSheet: Bool = false
-    // FullScreenCoverを使った画面遷移の状態
-//    @State private var ShowFullScreenCover: Bool = false
-    
     @StateObject private var vm = BleScanViewModel()
     
     var body: some View {
@@ -40,7 +35,7 @@ struct ContentView: View {
 
                 List(vm.devices) { device in
                     Button {
-                        vm.select(device) // ★ここで stopScan() してから遷移
+                        vm.select(device)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(device.name).font(.headline)

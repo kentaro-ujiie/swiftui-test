@@ -9,7 +9,6 @@ import Foundation
 import CoreBluetooth
 
 struct BleDevice: Identifiable, Hashable {
-    // peripheral.identifier は安定したUUID
     var id: UUID { identifier }
     let identifier: UUID
 

@@ -48,29 +48,23 @@ final class BleCentralService: NSObject {
         isScanning = false
         central.stopScan()
     }
-    
-    // ★UUIDからCBPeripheralを取り出す（見つかっていないIDは接続できない）
-    func peripheral(for id: UUID) -> CBPeripheral? {
-        peripheralsById[id]
-    }
 
-    // ★接続開始
+    // 接続開始
     func connect(id: UUID) {
         guard central.state == .poweredOn else { return }
         guard let p = peripheralsById[id] else { return }
 
-        // delegateはここで必ず設定（discoverServicesの結果を受けるため）
-        p.delegate = self
+        p.delegate = self // delegateを設定する。discoverServicesの結果を受けるため。
         central.connect(p, options: nil)
     }
 
-    // ★切断
+    // 切断
     func disconnect(id: UUID) {
         guard let p = peripheralsById[id] else { return }
         central.cancelPeripheralConnection(p)
     }
 
-    // ★サービス探索
+    // サービス探索
     func discoverServices(id: UUID, serviceUUIDs: [CBUUID]? = nil) {
         guard let p = peripheralsById[id] else { return }
         p.discoverServices(serviceUUIDs) // nilなら全部
