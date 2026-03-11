@@ -16,6 +16,16 @@ final class BleCentralService: NSObject {
 
     private(set) var isScanning: Bool = false
 
+    // ★接続系イベント
+    var onConnect: ((UUID) -> Void)?
+    var onFailToConnect: ((UUID, Error?) -> Void)?
+    var onDisconnect: ((UUID, Error?) -> Void)?
+    var onServicesUpdated: ((UUID, [CBService]) -> Void)?
+    var onPeripheralError: ((UUID, Error) -> Void)?
+    
+    // ★Peripheralのキャッシュ（スキャンで見つかった個体）
+    private var peripheralsById: [UUID: CBPeripheral] = [:]
+    
     override init() {
         super.init()
         central = CBCentralManager(delegate: self, queue: nil)
@@ -35,6 +45,33 @@ final class BleCentralService: NSObject {
         isScanning = false
         central.stopScan()
     }
+    
+    // ★UUIDからCBPeripheralを取り出す（見つかっていないIDは接続できない）
+    func peripheral(for id: UUID) -> CBPeripheral? {
+        peripheralsById[id]
+    }
+
+    // ★接続開始
+    func connect(id: UUID) {
+        guard central.state == .poweredOn else { return }
+        guard let p = peripheralsById[id] else { return }
+
+        // delegateはここで必ず設定（discoverServicesの結果を受けるため）
+        p.delegate = self
+        central.connect(p, options: nil)
+    }
+
+    // ★切断
+    func disconnect(id: UUID) {
+        guard let p = peripheralsById[id] else { return }
+        central.cancelPeripheralConnection(p)
+    }
+
+    // ★サービス探索
+    func discoverServices(id: UUID, serviceUUIDs: [CBUUID]? = nil) {
+        guard let p = peripheralsById[id] else { return }
+        p.discoverServices(serviceUUIDs) // nilなら全部
+    }
 }
 
 extension BleCentralService: CBCentralManagerDelegate {
@@ -49,6 +86,36 @@ extension BleCentralService: CBCentralManagerDelegate {
                         didDiscover peripheral: CBPeripheral,
                         advertisementData: [String : Any],
                         rssi RSSI: NSNumber) {
+        peripheralsById[peripheral.identifier] = peripheral
         onDiscover?(peripheral, RSSI)
+    }
+    
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        onConnect?(peripheral.identifier)
+    }
+
+    func centralManager(_ central: CBCentralManager,
+                        didFailToConnect peripheral: CBPeripheral,
+                        error: Error?) {
+        onFailToConnect?(peripheral.identifier, error)
+    }
+
+    func centralManager(_ central: CBCentralManager,
+                        didDisconnectPeripheral peripheral: CBPeripheral,
+                        error: Error?) {
+        onDisconnect?(peripheral.identifier, error)
+    }
+}
+
+extension BleCentralService: CBPeripheralDelegate {
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        let id = peripheral.identifier
+
+        if let error {
+            onPeripheralError?(id, error)
+            return
+        }
+
+        onServicesUpdated?(id, peripheral.services ?? [])
     }
 }

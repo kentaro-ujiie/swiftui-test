@@ -15,7 +15,7 @@ final class BleScanViewModel: ObservableObject {
     @Published private(set) var bluetoothState: CBManagerState = .unknown
     @Published private(set) var isScanning: Bool = false
 
-    private let service: BleCentralService
+    let centralService: BleCentralService
     
     // ★追加：遷移用（選択されたデバイス）
     @Published var selectedDevice: BleDevice?
@@ -30,14 +30,14 @@ final class BleScanViewModel: ObservableObject {
     // 1秒ごとの反映タスク
     private var flushTask: Task<Void, Never>?
     
-    // ★自動停止（10秒）用
+    // ★自動停止（5秒）用
     private var autoStopTask: Task<Void, Never>?
     private let scanDurationSeconds: UInt64 = 5
 
     init(service: BleCentralService? = nil) {
-        self.service = service ?? BleCentralService()
+        self.centralService = service ?? BleCentralService()
 
-        self.service.onStateChange = { [weak self] state in
+        self.centralService.onStateChange = { [weak self] state in
             guard let self else { return }
             Task { @MainActor in
                 self.bluetoothState = state
@@ -49,7 +49,7 @@ final class BleScanViewModel: ObservableObject {
         }
 
         // ここは頻繁に呼ばれてOK（buffer更新のみで @Published は更新しない）
-        self.service.onDiscover = { [weak self] peripheral, rssi in
+        self.centralService.onDiscover = { [weak self] peripheral, rssi in
             guard let self else { return }
             Task { @MainActor in
                 self.updateBuffer(peripheral: peripheral, rssi: rssi.intValue)
@@ -61,7 +61,7 @@ final class BleScanViewModel: ObservableObject {
         // 二重開始防止
         guard !isScanning else { return }
         
-        service.startScan()
+        centralService.startScan()
         isScanning = true
         
         startFlushLoopIfNeeded()
@@ -76,7 +76,7 @@ final class BleScanViewModel: ObservableObject {
             return
         }
         
-        service.stopScan()
+        centralService.stopScan()
         isScanning = false
         
         stopAutoStop()

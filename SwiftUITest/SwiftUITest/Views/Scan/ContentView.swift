@@ -39,28 +39,26 @@ struct ContentView: View {
                 .padding(.top, 8)
 
                 List(vm.devices) { device in
-                    ForEach(vm.devices) { device in
-                        Button {
-                            vm.select(device) // ★ここで stopScan() してから遷移
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(device.name).font(.headline)
-                                Text(device.identifier.uuidString)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-
-                                HStack {
-                                    Text("RSSI: \(device.rssi)")
-                                    Spacer()
-                                    Text(device.lastSeen, style: .time)
-                                        .foregroundStyle(.secondary)
-                                }
+                    Button {
+                        vm.select(device) // ★ここで stopScan() してから遷移
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(device.name).font(.headline)
+                            Text(device.identifier.uuidString)
                                 .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            HStack {
+                                Text("RSSI: \(device.rssi)")
+                                Spacer()
+                                Text(device.lastSeen, style: .time)
+                                    .foregroundStyle(.secondary)
                             }
-                            .contentShape(Rectangle())
+                            .font(.caption)
                         }
-                        .buttonStyle(.plain)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
                 .listStyle(.plain)
             }
@@ -72,37 +70,9 @@ struct ContentView: View {
                 }
             }
             .navigationDestination(item: $vm.selectedDevice) { device in
-                BleDeviceDetailView(device: device)
+                BleDeviceDetailView(device: device, centralService: vm.centralService)
             }
         }
-        
-        /*
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-            // NavigationViewを使った画面遷移
-            NavigationView {
-                NavigationLink("NavigationView") {
-                    SubView()
-                }
-            }
-            // sheetを使った画面遷移
-            Button("sheet") {
-                ShowSheet.toggle()
-            }.sheet(isPresented: $ShowSheet) {
-                SubView()
-            }
-            // FullScreenCoverを使った画面遷移
-            Button("FullScreenCover") {
-                ShowFullScreenCover.toggle()
-            }.fullScreenCover(isPresented: $ShowFullScreenCover) {
-                SubView()
-            }
-        }
-        .padding()
-        */
     }
 
     private func stateText(_ state: CBManagerState) -> String {
