@@ -6,13 +6,17 @@
 //
 
 import SwiftUI
+import CoreBluetooth
 
 struct BleDeviceDetailView: View {
     let device: BleDevice
+    let centralService: BleCentralService
+
     @StateObject private var vm: BleDeviceDetailViewModel
 
     init(device: BleDevice, centralService: BleCentralService) {
         self.device = device
+        self.centralService = centralService
         _vm = StateObject(wrappedValue: BleDeviceDetailViewModel(deviceId: device.identifier,
                                                                 service: centralService))
     }
@@ -26,13 +30,12 @@ struct BleDeviceDetailView: View {
             }
 
             Section("GATT Services") {
-                if vm.services.isEmpty {
-                    Text(vm.state == .ready ? "No services." : "Loading...")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(vm.services) { s in
+                ForEach(vm.services) { s in
+                    Button {
+                        vm.selectService(s.uuidString)
+                    } label: {
                         HStack {
-                            Text(s.uuidString).font(.body)
+                            Text(s.uuidString)
                             Spacer()
                             if s.isPrimary {
                                 Text("Primary")
@@ -41,19 +44,23 @@ struct BleDeviceDetailView: View {
                             }
                         }
                     }
+                    .buttonStyle(.plain)
                 }
-            }
 
-            Section {
-                Button("Disconnect") {
-                    vm.disconnect()
+                if vm.services.isEmpty {
+                    Text(vm.state == .ready ? "No services." : "Loading...")
+                        .foregroundStyle(.secondary)
                 }
-                .disabled(vm.state == .disconnected || vm.state == .idle)
             }
         }
         .navigationTitle("Device Detail")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { vm.onAppear() }
+        .navigationDestination(item: $vm.selectedServiceUUID) { serviceUUIDString in
+            BleCharacteristicsView(deviceId: device.identifier,
+                                   serviceUUIDString: serviceUUIDString,
+                                   centralService: centralService)
+        }
     }
 
     private func stateText(_ state: BleConnectionState) -> String {

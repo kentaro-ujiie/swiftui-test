@@ -13,6 +13,7 @@ import Combine
 final class BleDeviceDetailViewModel: ObservableObject {
     @Published private(set) var state: BleConnectionState = .idle
     @Published private(set) var services: [BleGattService] = []
+    @Published var selectedServiceUUID: String?
 
     private let deviceId: UUID
     private let service: BleCentralService
@@ -69,5 +70,9 @@ final class BleDeviceDetailViewModel: ObservableObject {
 
     func disconnect() {
         service.disconnect(id: deviceId)
+    }
+    
+    func selectService(_ uuidString: String) {
+        selectedServiceUUID = uuidString
     }
 }

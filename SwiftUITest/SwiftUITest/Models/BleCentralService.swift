@@ -25,6 +25,9 @@ final class BleCentralService: NSObject {
     
     // ★Peripheralのキャッシュ（スキャンで見つかった個体）
     private var peripheralsById: [UUID: CBPeripheral] = [:]
+
+    // キャラクタリスティック取得イベント
+    var onCharacteristicsUpdated: ((UUID, CBUUID, [CBCharacteristic]) -> Void)?
     
     override init() {
         super.init()
@@ -72,6 +75,15 @@ final class BleCentralService: NSObject {
         guard let p = peripheralsById[id] else { return }
         p.discoverServices(serviceUUIDs) // nilなら全部
     }
+    
+    // キャラクタリスティック探索
+    func discoverCharacteristics(id: UUID, serviceUUID: CBUUID, characteristicUUIDs: [CBUUID]? = nil) {
+        guard let p = peripheralsById[id] else { return }
+        guard let services = p.services else { return }
+        guard let target = services.first(where: { $0.uuid == serviceUUID }) else { return }
+
+        p.discoverCharacteristics(characteristicUUIDs, for: target)
+    }
 }
 
 extension BleCentralService: CBCentralManagerDelegate {
@@ -117,5 +129,16 @@ extension BleCentralService: CBPeripheralDelegate {
         }
 
         onServicesUpdated?(id, peripheral.services ?? [])
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral,
+                    didDiscoverCharacteristicsFor service: CBService,
+                    error: Error?) {
+        let id = peripheral.identifier
+        if let error {
+            onPeripheralError?(id, error)
+            return
+        }
+        onCharacteristicsUpdated?(id, service.uuid, service.characteristics ?? [])
     }
 }
