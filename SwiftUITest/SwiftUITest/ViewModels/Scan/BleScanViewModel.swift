@@ -15,7 +15,7 @@ final class BleScanViewModel: ObservableObject {
     @Published private(set) var bluetoothState: CBManagerState = .unknown
     @Published private(set) var isScanning: Bool = false
 
-    let centralService: BleCentralService
+    private(set) var centralService: BleCentralService
     
     // ★追加：遷移用（選択されたデバイス）
     @Published var selectedDevice: BleDevice?
